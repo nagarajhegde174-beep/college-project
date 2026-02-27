@@ -34,5 +34,5 @@ export function generateVerificationOtpEmailTemplate(otpCode){
     </p>
   </footer>
 
-</div>`
+</div>`;
 }
