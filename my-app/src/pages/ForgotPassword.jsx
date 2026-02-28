@@ -40,7 +40,7 @@ return <>
 <div className ="flex flex-col justify-center md: flex-row h-screen">
   {/* LEFT SECTION */ }
   {/* RIGHT SECTION */ }
-<div className="Hidden w-full md:w-1/2 bg-black text-white md:flex flex-col items-center justify-center p-8 rounded-tr-[80px] rounded-br-[80px]>
+< div className="Hidden w-full md:w-1/2 bg-black text-white md:flex flex-col items-center justify-center p-8 rounded-tr-[80px] rounded-br-[80px]" >
 </div>
 </div>
 </>;

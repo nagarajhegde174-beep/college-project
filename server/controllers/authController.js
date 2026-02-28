@@ -5,6 +5,9 @@ import {User} from "../models/userModel.js";
 import bcrypt from "bcrypt";
 import crypt from "crypto";
 import { sendVerificationCode } from "../utils/sendVerificationCode.js";
+import { validate } from "node-cron";
+import {sendToken} from "../utils/sendToken.js"; 
+
 
 export const register=catchAsyncErrors(async(req,res,next)=>{
     try{
@@ -44,5 +47,57 @@ export const register=catchAsyncErrors(async(req,res,next)=>{
     }
     
     
+});
+
+export const verifyOTP =catchAsyncErrors(async(req, res, next) => {
+const {email, otp}=req.body;
+if(!email || otp){
+    return next(new ErrorHandler("email or otp is missing",400));
+}
+try{
+    const userAllEntries=await User.find({
+        email,
+        accountVerified:false,
+    }).sort({createdAt: -1});
+
+    if(userAllEntries){
+        return next(new ErrorHandler("user not found",404));
+    }
+
+    let user;
+
+    if(userAllEntries.length > 1){
+        user = userAllEntries[0];
+        await User.deleteMany({
+            _id: {$ne: user._id},
+            email,
+            accountVerified: false,
+        });
+    }else{
+        user =userAllEntries[0];
+    }
+     
+    if(user.verificationCode !== Number (otp)){
+        return next(new ErrorHandler("invalid OTP",400));
+    }
+    const currentTime=Date.now();
+
+    const verificationCodeExpire = new Date(user.verificationCodeExpire).getTime();
+
+
+    if(currentTime > verificationCodeExpire){
+        return next(new ErrorHandler("OTP expired.",400))
+    }
+user.accountVerified=true;
+user.verificationCode=null;
+user.verificationCodeExpire=null;
+await user.save({validateModifiedOnly: true });
+
+sendToken(user, 200, "Account verified",res);
+
+
+}catch(error){
+    return next(new ErrorHandler("internal server error.",500))
+}
 });
 
