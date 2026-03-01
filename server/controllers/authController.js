@@ -1,11 +1,10 @@
-// import { send } from "process";
 import { catchAsyncErrors } from "../middlewares/catchAsyncErrors.js";
 import ErrorHandler from "../middlewares/errorMiddlewares.js";
 import {User} from "../models/userModel.js";
 import bcrypt from "bcrypt";
 import crypt from "crypto";
 import { sendVerificationCode } from "../utils/sendVerificationCode.js";
-import { validate } from "node-cron";
+
 import {sendToken} from "../utils/sendToken.js"; 
 
 
@@ -50,8 +49,9 @@ export const register=catchAsyncErrors(async(req,res,next)=>{
 });
 
 export const verifyOTP =catchAsyncErrors(async(req, res, next) => {
+
 const {email, otp}=req.body;
-if(!email || otp){
+if(!email || !otp){
     return next(new ErrorHandler("email or otp is missing",400));
 }
 try{
@@ -60,9 +60,11 @@ try{
         accountVerified:false,
     }).sort({createdAt: -1});
 
-    if(userAllEntries){
-        return next(new ErrorHandler("user not found",404));
-    }
+   
+    
+if (!userAllEntries || userAllEntries.length === 0) {
+    return next(new ErrorHandler("user not found", 404));
+}
 
     let user;
 
@@ -100,4 +102,31 @@ sendToken(user, 200, "Account verified",res);
     return next(new ErrorHandler("internal server error.",500))
 }
 });
+
+export const login=catchAsyncErrors(async(req, res, next)=>{
+    const {email, password}=req.body;
+    if(!email || !password){
+       return next(new ErrorHandler("please enter all fields",400));
+    }
+    const user = await User.findOne({email,accountVerified: true}).select("+password");
+    if(!user){
+        return next(new ErrorHandler("invalid email or password.",400));
+    }
+    const isPasswordMatched =await bcrypt.compare(password, user.password);
+
+    if(!isPasswordMatched){
+        return next(new ErrorHandler("invalid email or password.",400));
+    }
+    sendToken(user, 200, "user login successfully.", res);
+});
+
+export const logout=catchAsyncErrors(async(req, res, next)=>{
+    res.status(200).cookie("token","",{
+        expires:new Date(Date.now()),
+        httpOnly: true, 
+    }).json({
+        success:true,
+        message:"Logged out successfully",
+    });
+})
 

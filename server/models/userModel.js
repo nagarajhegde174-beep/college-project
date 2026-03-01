@@ -26,8 +26,9 @@ const userSchema = new mongoose.Schema({
     default:"User",
    },
 
-   accountfield:{
-    type:Boolean,default:false
+   accountVerified:{
+    type: Boolean,
+    default:false
 
    },
 
